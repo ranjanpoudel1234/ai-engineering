@@ -1,0 +1,126 @@
+# Context Engineering
+	- Discipline of desiging everything around the model
+	- Optimizing the utility of tokens.
+	- Good prompt engineering + tools +dynamic study +cost
+	- Context is like RAM
+![alt text](image.png)
+    
+
+
+## Effective context Engineering
+
+### Write - Give your agent an external notebook
+
+a. Giving agent ways to persist info
+b. Make agent take notes -> eg. scratchpads, working note during task
+c. Rules files (eg. claude.md)
+d. Memory - facts and preferences persisted across sessions(like permissions). File based system that is external
+c. Writing is great, but agents needs to learn to pull the right information at right time
+
+
+### Select - agent selects right information at the right time. Pull in only whats relevant for the current step
+
+a. But who makes that decision on what to select -- cant select everything
+b. Eg. in Traditional RAG - system makes this. Model has no say, its one shot
+c. However, in agentic RAG that changes. Agent decides what to search + when to stop
+![alt text](image-2.png)
+c. So, what does the agent actually select on? Thats when memory needs to be handled
+
+ Handling Memory - Agent can pull from these types of memory. However, have to be methodical about tools.
+![alt text](image-3.png)
+d. Tools - Better tool selection
+    - You cannot give agent 40 tools to work with. Thats too much
+    - Rather, you can use RAG and setup select tool calls like below
+e. This alone can push the cost down and increase accuracy by huge margin
+![alt text](image-4.png)
+f. LOAD some CONTEXT ahead of time but then let agent do Just In Time tool calling as needed so context is not over bloated
+g. Even if you optimize good initial load, context can still build up over time. Thats when you apply compress strategies
+
+### Compress  -  Reduce token count while preserving what matters
+
+#### Before Agent starts working
+
+a.Compress context before it enters - eg. RAG chunking and reranking to send only required context to LLM
+![alt text](image-6.png)
+
+b. You can also sumarie the tool outputs on the fly so main context only gets the summary.
+
+#### While the agent is working
+
+a. Summary each conversation after you have them. So you always have compact version.
+Maybe you keep last 10 messages verbatim but keep everything else summarized.
+
+![alt text](image-7.png)
+
+#### After the agent is done working
+
+a. Remove all excess tokens from LLM
+![alt text](image-8.png)
+
+### Isolate
+
+1. Once you are done with research, there is no need for that context to linger around for implementation phase
+2. For implementation, the agent should start fresh with fresh context.
+3. Thats where subagents come in.
+![alt text](image-9.png)
+
+## What goes wrong when context engineering is NOT done well
+
+### Context Poisoning and Pruning
+
+1. A wrong information got into LLM and it keeps cascading that down. This could be wrong result from web search or wrong result from Tool
+2. What is the fix?? CONTEXT PRUNING
+3. Context Pruning is pruning outdated info, validate tool calls and compress error-recovery sequences.
+![alt text](image-10.png)
+
+### Context Distraction
+
+1. When agent gets distracted with details it found and stops thinking.
+2. Best solution is to keep summarizing and keep pruning
+![alt text](image-11.png)
+
+### Context Confusion
+
+1. When superfulous contents get into the context
+2. Wrong tools called for example - if you give all 46 tools, it picked wrong one. 
+3. Fix - dynamic tool management. Keep tool focused on current task. Use semantic kernel and RAG based mcp approach to only pull tools that are necessary.
+
+### Context Clash
+
+1. Agent grabbed information that conflicts with what is already in its context.
+2. Eg system prompt said one thing, retrieved doc says another, user said something else.
+3. Fix - use authority ordering.
+4. Validate the information from the tools before injecting into the context as much as possible.
+![alt text](image-12.png)
+
+## System Prompt Best Practics
+
+### Structure with Sections
+
+- Use XML tags or markdown headers.
+- Break into background, instructions, tool guidance
+
+### Start Minimal and Iterate
+
+- Dont anticipate every edge case
+- Run against real tasks, observe failures, and add instructions!
+
+### Use few shot examples
+
+### Think about tool definitions
+
+#### Put stable content at the top - system prompt, tool def. The things that do not change between the LLM calls.
+
+- This will fire KV cache for context against LLM
+- Put dynamic things at the bottom
+
+#### Tool Masking
+
+- keeping the list of tools - fairly unchanged. So, the context KV remains unchanged
+- Also tell agent to not use certain tools by marking it masked and letting agent know.
+
+### RAG-Based selection
+
+- Use RAG and Semantic search to load only the correct tool  in the context
+
+![alt text](image-13.png)
